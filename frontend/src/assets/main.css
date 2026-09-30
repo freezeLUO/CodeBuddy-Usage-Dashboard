@@ -1,0 +1,85 @@
+:root {
+  --cb-bg: #f4f5f7;
+  --cb-card: #ffffff;
+  --cb-border: #e6e8ec;
+  --cb-text: #1f2430;
+  --cb-text-soft: #6b7280;
+  --cb-accent: #5b5bd6;
+  --cb-accent-soft: #eeeefb;
+  --cb-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.05);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--cb-bg);
+  color: var(--cb-text);
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 0 28px 40px;
+}
+
+.card {
+  background: var(--cb-card);
+  border: 1px solid var(--cb-border);
+  border-radius: 14px;
+  box-shadow: var(--cb-shadow);
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.card-title .hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--cb-text-soft);
+}
+
+.chart {
+  height: 320px;
+  padding: 8px 12px 12px;
+}
+
+.chart.tall {
+  height: 360px;
+}
+
+.muted {
+  color: var(--cb-text-soft);
+}
+
+.mono {
+  font-family: 'JetBrains Mono', 'Cascadia Mono', Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+.el-table {
+  --el-table-border-color: var(--cb-border);
+  --el-table-header-bg-color: #fafbfc;
+}
+
+.el-drawer__header {
+  margin-bottom: 12px;
+}
