@@ -2,9 +2,10 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 
-set PY=backend\.venv\Scripts\python.exe
+set "PY=backend\.venv\Scripts\python.exe"
+
 if not exist "%PY%" (
-    echo [错误] 未找到虚拟环境，请先执行:
+    echo [ERROR] Virtualenv not found. Please run:
     echo     cd backend
     echo     python -m venv .venv
     echo     uv pip install --python .venv\Scripts\python.exe -e .
@@ -13,7 +14,7 @@ if not exist "%PY%" (
 )
 
 if not exist "frontend\dist\index.html" (
-    echo [提示] 未找到前端产物，正在尝试构建...
+    echo [INFO] Frontend build missing, building...
     pushd frontend
     call pnpm install
     call pnpm build
