@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <title>预览 · 侧边栏</title>
+    <link rel="stylesheet" href="/preview/theme.css" />
+  </head>
+  <body class="vscode-dark">
+    <div id="app" data-view="sidebar"></div>
+    <script>
+      const theme = new URLSearchParams(location.search).get('theme')
+      if (theme === 'light') document.body.className = 'vscode-light'
+    </script>
+    <script type="module" src="/src/preview/sidebar.ts"></script>
+  </body>
+</html>

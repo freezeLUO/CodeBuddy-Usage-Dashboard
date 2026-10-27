@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+    background: var(--cb-bg);
+    color: var(--cb-fg);
+    font-family: var(--vscode-font-family, 'Segoe UI', 'PingFang SC', sans-serif);
+    font-size: 12px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  #app {
+    min-height: 100vh;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+  }
+
+  input,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+
+  input:focus-visible,
+  button:focus-visible,
+  [tabindex]:focus-visible {
+    outline: 1px solid var(--cb-focus);
+    outline-offset: 1px;
+  }
+
+  input[type='date']::-webkit-calendar-picker-indicator {
+    filter: invert(0.6);
+    cursor: pointer;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--vscode-scrollbarSlider-background, rgba(128, 128, 128, 0.4));
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--vscode-scrollbarSlider-hoverBackground, rgba(128, 128, 128, 0.6));
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  .cb-card {
+    border: 1px solid var(--cb-border-soft);
+    border-radius: var(--cb-radius);
+    background: var(--cb-card);
+  }
+
+  .cb-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .cb-hint {
+    font-size: 11px;
+    color: var(--cb-fg-soft);
+  }
+
+  .cb-num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  .cb-mono {
+    font-family: var(--vscode-editor-font-family, 'Consolas', monospace);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .cb-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  }
+
+  .cb-btn:hover {
+    background: var(--cb-card-hover);
+  }
+
+  .cb-btn--primary {
+    background: var(--cb-accent);
+    color: var(--cb-accent-fg);
+    border-color: transparent;
+  }
+
+  .cb-btn--primary:hover {
+    background: var(--cb-accent-hover);
+  }
+
+  .cb-btn--ghost {
+    border-color: var(--cb-input-border);
+    background: var(--cb-input-bg);
+  }
+
+  .cb-divider {
+    height: 1px;
+    background: var(--cb-border-soft);
+  }
+
+  .cb-fade-enter-active,
+  .cb-fade-leave-active {
+    transition: opacity 160ms ease;
+  }
+
+  .cb-fade-enter-from,
+  .cb-fade-leave-to {
+    opacity: 0;
+  }
+}

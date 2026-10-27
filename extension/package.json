@@ -1,0 +1,178 @@
+{
+  "name": "codebuddy-usage",
+  "displayName": "CodeBuddy 用量看板",
+  "description": "在侧边栏查看本机 CodeBuddy 的 Token 与积分消耗：每日趋势、项目与模型分布、会话与逐请求明细。数据全部来自本地磁盘，不联网。",
+  "version": "0.1.0",
+  "publisher": "your-publisher-id",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0",
+    "node": ">=18"
+  },
+  "categories": [
+    "Visualization",
+    "Other"
+  ],
+  "keywords": [
+    "codebuddy",
+    "token",
+    "usage",
+    "credit",
+    "dashboard",
+    "用量",
+    "积分"
+  ],
+  "icon": "media/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-name/codebuddy-usage-dashboard"
+  },
+  "bugs": {
+    "url": "https://github.com/your-name/codebuddy-usage-dashboard/issues"
+  },
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:codebuddyUsage.sidebar",
+    "onCommand:codebuddyUsage.openDashboard"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codebuddyUsage",
+          "title": "CodeBuddy 用量",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "codebuddyUsage": [
+        {
+          "id": "codebuddyUsage.sidebar",
+          "name": "用量概览",
+          "type": "webview",
+          "contextualTitle": "CodeBuddy 用量"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codebuddyUsage.refresh",
+        "title": "刷新用量数据",
+        "category": "CodeBuddy 用量",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "codebuddyUsage.openDashboard",
+        "title": "打开完整看板",
+        "category": "CodeBuddy 用量",
+        "icon": "$(graph)"
+      },
+      {
+        "command": "codebuddyUsage.openSettings",
+        "title": "打开设置（数据目录）",
+        "category": "CodeBuddy 用量"
+      },
+      {
+        "command": "codebuddyUsage.revealDataRoot",
+        "title": "打开数据目录",
+        "category": "CodeBuddy 用量"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "codebuddyUsage.refresh",
+          "when": "view == codebuddyUsage.sidebar",
+          "group": "navigation@1"
+        },
+        {
+          "command": "codebuddyUsage.openDashboard",
+          "when": "view == codebuddyUsage.sidebar",
+          "group": "navigation@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "codebuddyUsage.refresh"
+        },
+        {
+          "command": "codebuddyUsage.openDashboard"
+        },
+        {
+          "command": "codebuddyUsage.openSettings"
+        },
+        {
+          "command": "codebuddyUsage.revealDataRoot"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "CodeBuddy 用量",
+      "properties": {
+        "codebuddyUsage.dataRoot": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "markdownDescription": "CodeBuddy 会话数据根目录。留空则按平台默认值推断：\n\n- Windows：`%LOCALAPPDATA%\\CodeBuddyExtension\\Data`\n- macOS：`~/Library/Application Support/CodeBuddyExtension/Data`\n- Linux：`~/.config/CodeBuddyExtension/Data`\n\n仅 Windows 路径经过实测验证，其他平台如无数据请手动指定。"
+        },
+        "codebuddyUsage.workspaceStorageRoot": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "markdownDescription": "VSCode 的 `workspaceStorage` 目录，用于把会话目录的 hash 反查成项目路径。留空则按平台默认值推断。"
+        },
+        "codebuddyUsage.autoRefreshMinutes": {
+          "type": "number",
+          "default": 5,
+          "minimum": 0,
+          "maximum": 1440,
+          "scope": "window",
+          "markdownDescription": "自动增量刷新的间隔（分钟）。`0` 表示关闭定时刷新，仅在打开视图、修改筛选或手动点击刷新时更新。"
+        },
+        "codebuddyUsage.staleMinutes": {
+          "type": "number",
+          "default": 2,
+          "minimum": 0,
+          "maximum": 1440,
+          "scope": "window",
+          "markdownDescription": "视图重新可见时，若距上次同步超过该分钟数则自动增量刷新。"
+        },
+        "codebuddyUsage.showStatusBar": {
+          "type": "boolean",
+          "default": true,
+          "scope": "window",
+          "description": "在状态栏显示今日积分消耗，点击可打开完整看板。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run build",
+    "build": "pnpm run build:host && pnpm run build:webview",
+    "build:host": "node esbuild.config.mjs",
+    "build:webview": "vite build --config webview/vite.config.ts --mode sidebar && vite build --config webview/vite.config.ts --mode dashboard",
+    "watch:host": "node esbuild.config.mjs --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit && vue-tsc -p tsconfig.webview.json --noEmit",
+    "test": "vitest run",
+    "package": "pnpm run build && vsce package --no-dependencies",
+    "icon": "node scripts/make-icon.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "@types/vscode": "^1.85.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vscode/vsce": "^3.6.0",
+    "autoprefixer": "^10.4.20",
+    "echarts": "^6.1.0",
+    "esbuild": "^0.25.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "3.4.17",
+    "typescript": "~5.9.3",
+    "vite": "^7.1.7",
+    "vitest": "^3.2.4",
+    "vue": "^3.5.22",
+    "vue-echarts": "^8.3.1",
+    "vue-tsc": "^3.1.0"
+  }
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+  <path d="M3.6 10.6h3a1 1 0 0 1 1 1v6.8a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1v-6.8a1 1 0 0 1 1-1z" opacity=".55" />
+  <path d="M10.1 6.4h3a1 1 0 0 1 1 1v10.9a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V7.4a1 1 0 0 1 1-1z" opacity=".8" />
+  <path d="M16.6 3h3a1 1 0 0 1 1 1v14.3a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z" />
+</svg>

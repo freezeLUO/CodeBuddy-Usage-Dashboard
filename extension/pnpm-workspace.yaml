@@ -1,0 +1,17 @@
+packages:
+  - '.'
+
+# esbuild 需要构建脚本；vsce 的签名/凭据相关依赖仅发布时才用到，可安全忽略。
+onlyBuiltDependencies:
+  - esbuild
+
+ignoredBuiltDependencies:
+  - '@vscode/vsce-sign'
+  - keytar
+
+strictDepBuilds: false
+
+allowBuilds:
+  '@vscode/vsce-sign': set this to true or false
+  esbuild: set this to true or false
+  keytar: set this to true or false

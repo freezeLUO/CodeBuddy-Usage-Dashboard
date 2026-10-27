@@ -1,0 +1,70 @@
+/* 预览用：模拟 VSCode 主题变量（仅开发用，不进入扩展产物）。 */
+body.vscode-dark {
+  --vscode-font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --vscode-editor-font-family: Consolas, 'Courier New', monospace;
+  --vscode-sideBar-background: #252526;
+  --vscode-editor-background: #1e1e1e;
+  --vscode-editorWidget-background: #2d2d30;
+  --vscode-foreground: #cccccc;
+  --vscode-descriptionForeground: #9d9d9d;
+  --vscode-panel-border: #3c3c3c;
+  --vscode-editorWidget-border: #454545;
+  --vscode-button-background: #0e639c;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-hoverBackground: #1177bb;
+  --vscode-textLink-foreground: #4da3ff;
+  --vscode-input-background: #3c3c3c;
+  --vscode-input-border: #454545;
+  --vscode-focusBorder: #007fd4;
+  --vscode-badge-background: #4d4d4d;
+  --vscode-badge-foreground: #ffffff;
+  --vscode-errorForeground: #f48771;
+  --vscode-testing-iconPassed: #89d185;
+  --vscode-charts-blue: #4d8dff;
+  --vscode-charts-orange: #e8a33d;
+  --vscode-charts-green: #3f8f86;
+  --vscode-charts-purple: #7a6cbf;
+  --vscode-charts-red: #b5637d;
+  --vscode-list-activeSelectionBackground: rgba(4, 105, 176, 0.55);
+  --vscode-list-activeSelectionForeground: #ffffff;
+  --vscode-list-hoverBackground: rgba(255, 255, 255, 0.06);
+  --vscode-scrollbarSlider-background: rgba(121, 121, 121, 0.4);
+  --vscode-textCodeBlock-background: #2d2d30;
+}
+
+body.vscode-light {
+  --vscode-font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  --vscode-editor-font-family: Consolas, 'Courier New', monospace;
+  --vscode-sideBar-background: #f8f8f8;
+  --vscode-editor-background: #ffffff;
+  --vscode-editorWidget-background: #f8f8f8;
+  --vscode-foreground: #3b3b3b;
+  --vscode-descriptionForeground: #717171;
+  --vscode-panel-border: #e5e5e5;
+  --vscode-editorWidget-border: #e5e5e5;
+  --vscode-button-background: #005fb8;
+  --vscode-button-foreground: #ffffff;
+  --vscode-button-hoverBackground: #0258a8;
+  --vscode-textLink-foreground: #005fb8;
+  --vscode-input-background: #ffffff;
+  --vscode-input-border: #cecece;
+  --vscode-focusBorder: #005fb8;
+  --vscode-badge-background: #e4e4e4;
+  --vscode-badge-foreground: #3b3b3b;
+  --vscode-errorForeground: #e51400;
+  --vscode-testing-iconPassed: #388a34;
+  --vscode-charts-blue: #1a85ff;
+  --vscode-charts-orange: #d18616;
+  --vscode-charts-green: #388a34;
+  --vscode-charts-purple: #652d90;
+  --vscode-charts-red: #e51400;
+  --vscode-list-activeSelectionBackground: #e8e8e8;
+  --vscode-list-activeSelectionForeground: #000000;
+  --vscode-list-hoverBackground: #f2f2f2;
+  --vscode-scrollbarSlider-background: rgba(100, 100, 100, 0.4);
+  --vscode-textCodeBlock-background: #f2f2f2;
+}
+
+body {
+  margin: 0;
+}

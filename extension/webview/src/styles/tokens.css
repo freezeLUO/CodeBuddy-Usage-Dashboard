@@ -1,0 +1,40 @@
+/* VSCode 主题变量 -> 语义变量，浅色/深色/高对比自动生效。 */
+:root,
+body {
+  --cb-bg: var(--vscode-sideBar-background, var(--vscode-editor-background, #1e1e1e));
+  --cb-bg-elevated: var(--vscode-editorWidget-background, rgba(255, 255, 255, 0.04));
+  --cb-card: var(--vscode-editorWidget-background, rgba(255, 255, 255, 0.03));
+  --cb-card-hover: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.06));
+  --cb-fg: var(--vscode-foreground, #cccccc);
+  --cb-fg-soft: var(--vscode-descriptionForeground, #9d9d9d);
+  --cb-border: var(--vscode-panel-border, rgba(128, 128, 128, 0.24));
+  --cb-border-soft: var(--vscode-editorWidget-border, rgba(128, 128, 128, 0.16));
+  --cb-accent: var(--vscode-button-background, #007acc);
+  --cb-accent-fg: var(--vscode-button-foreground, #ffffff);
+  --cb-accent-hover: var(--vscode-button-hoverBackground, #0062a3);
+  --cb-accent-soft: var(--vscode-textLink-foreground, #4da3ff);
+  --cb-input-bg: var(--vscode-input-background, rgba(255, 255, 255, 0.06));
+  --cb-input-border: var(--vscode-input-border, rgba(128, 128, 128, 0.35));
+  --cb-focus: var(--vscode-focusBorder, #007acc);
+  --cb-badge: var(--vscode-badge-background, rgba(128, 128, 128, 0.24));
+  --cb-badge-fg: var(--vscode-badge-foreground, #ffffff);
+  --cb-error: var(--vscode-errorForeground, #f14c4c);
+  --cb-warning: var(--vscode-editorWarning-foreground, #cca700);
+  --cb-success: var(--vscode-testing-iconPassed, #89d185);
+  --cb-credit: #c94070;
+  --cb-token-in: var(--vscode-charts-blue, #1a85ff);
+  --cb-token-out: var(--vscode-charts-orange, #d18616);
+  --cb-radius: 8px;
+}
+
+body.vscode-dark,
+body.vscode-high-contrast {
+  --cb-credit: #e07a9c;
+  --cb-token-in: var(--vscode-charts-blue, #4d8dff);
+  --cb-token-out: var(--vscode-charts-orange, #e8a33d);
+}
+
+/* 编辑器面板用 editor 背景，与侧边栏区分开 */
+#app[data-view='dashboard'] {
+  --cb-bg: var(--vscode-editor-background, #1e1e1e);
+}
