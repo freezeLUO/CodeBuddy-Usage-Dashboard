@@ -17,4 +17,5 @@ frontend/.vite/
 # 编辑器
 .vscode/
 .idea/
+.codebuddy/
 .DS_Store
