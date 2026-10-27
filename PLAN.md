@@ -261,7 +261,7 @@ frontend>  pnpm build        # → frontend/dist
 ```
 
 **SPA fallback**：`/api` 路由注册后 `app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="spa")`，再加 `@app.get("/{p:path}")`（仅当 dist 中无该文件且 p 不以 `api` 开头）返回 `FileResponse(dist/index.html)`。
-`run.py`：dist 缺失时打印「请先 pnpm build」但仍启动 API。`app.main` 启动时若 `sync_meta` 无 `last_full_scan` 自动跑一次全量 ingest。
+`run.py`：dist 缺失时打印「请先 pnpm build」但仍启动 API。`app.main` 启动时**总是**跑一次增量刷新（`sync_meta` 无 `last_full_scan` 时等价于全量 ingest），确保每次启动都是最新数据。
 
 ---
 

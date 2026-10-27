@@ -1,24 +1,29 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import dayjs from 'dayjs'
-import { useFiltersStore } from '@/stores/filters'
+import { useFiltersStore, type RangePreset } from '@/stores/filters'
 import { useDashboardStore } from '@/stores/dashboard'
 
 const filters = useFiltersStore()
 const dashboard = useDashboardStore()
 const { allProjects, allModels } = storeToRefs(dashboard)
 
-const range = computed({
+// value-format 为 YYYY-MM-DD，所以模型值直接用字符串，快捷范围写入后才能回显
+const range = computed<[string, string] | null>({
   get: () => {
     const [start, end] = filters.range
-    return start && end ? [new Date(start), new Date(end)] as [Date, Date] : null
+    return start && end ? ([start, end] as [string, string]) : null
   },
-  set: (value: [Date, Date] | null) => {
-    filters.range = value
-      ? [dayjs(value[0]).format('YYYY-MM-DD'), dayjs(value[1]).format('YYYY-MM-DD')]
-      : [null, null]
+  set: (value) => {
+    filters.range = value && value[0] && value[1] ? [value[0], value[1]] : [null, null]
+    // 用户手动改日期后，快捷范围回到未选中态
+    filters.preset = ''
   },
+})
+
+const preset = computed<RangePreset | ''>({
+  get: () => filters.preset,
+  set: (value) => filters.applyPreset(value ?? ''),
 })
 
 const hasFilter = computed(() => filters.active)
@@ -26,18 +31,33 @@ const hasFilter = computed(() => filters.active)
 
 <template>
   <div class="filter-bar card">
-    <div class="group">
+    <div class="group group--stacked">
       <label class="muted">时间范围</label>
-      <el-date-picker
-        v-model="range"
-        type="daterange"
-        value-format="YYYY-MM-DD"
-        range-separator="至"
-        start-placeholder="开始日期"
-        end-placeholder="结束日期"
-        :clearable="true"
-        style="width: 260px"
-      />
+      <div class="controls">
+        <el-select
+          v-model="preset"
+          placeholder="快捷选择"
+          clearable
+          value-on-clear=""
+          style="width: 116px"
+        >
+          <el-option label="近三天" value="3d" />
+          <el-option label="一周" value="1w" />
+          <el-option label="一个月" value="1m" />
+          <el-option label="一年" value="1y" />
+          <el-option label="全部" value="all" />
+        </el-select>
+        <el-date-picker
+          v-model="range"
+          type="daterange"
+          value-format="YYYY-MM-DD"
+          range-separator="至"
+          start-placeholder="开始日期"
+          end-placeholder="结束日期"
+          :clearable="true"
+          style="width: 260px"
+        />
+      </div>
     </div>
 
     <div class="group">
@@ -110,6 +130,18 @@ const hasFilter = computed(() => filters.active)
 }
 
 .group {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.group--stacked {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.group--stacked .controls {
   display: flex;
   align-items: center;
   gap: 9px;

@@ -1,5 +1,17 @@
 import { defineStore } from 'pinia'
+import dayjs from 'dayjs'
 import type { FilterParams } from '@/api/types'
+
+/** 快捷时间范围：近三天 / 一周 / 一个月 / 一年 / 全部 */
+export type RangePreset = '3d' | '1w' | '1m' | '1y' | 'all'
+
+/** 往前推的天数（含今天），即区间长度 - 1 */
+const PRESET_SPAN_DAYS: Record<Exclude<RangePreset, 'all'>, number> = {
+  '3d': 2,
+  '1w': 6,
+  '1m': 29,
+  '1y': 364,
+}
 
 function toISODate(value: Date | string | null): string | undefined {
   if (!value) return undefined
@@ -15,6 +27,8 @@ export const useFiltersStore = defineStore('filters', {
     workspaces: [] as string[],
     models: [] as string[],
     granularity: 'day' as 'day' | 'week',
+    /** 当前命中的快捷范围，空串表示手动选择的日期 */
+    preset: '' as RangePreset | '',
   }),
   getters: {
     active(state): boolean {
@@ -32,10 +46,24 @@ export const useFiltersStore = defineStore('filters', {
     },
   },
   actions: {
+    applyPreset(value: RangePreset | '') {
+      this.preset = value
+      if (!value) return
+      if (value === 'all') {
+        this.range = [null, null]
+        return
+      }
+      const today = dayjs()
+      this.range = [
+        today.subtract(PRESET_SPAN_DAYS[value], 'day').format('YYYY-MM-DD'),
+        today.format('YYYY-MM-DD'),
+      ]
+    },
     reset() {
       this.range = [null, null]
       this.workspaces = []
       this.models = []
+      this.preset = ''
     },
   },
 })
