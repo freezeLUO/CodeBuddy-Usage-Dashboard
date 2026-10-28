@@ -2,7 +2,7 @@
   "name": "codebuddy-usage",
   "displayName": "CodeBuddy / WorkBuddy 用量看板",
   "description": "在侧边栏查看本机 CodeBuddy 与 WorkBuddy 的 Token 与积分消耗：每日趋势、项目与模型分布、会话与逐请求明细，两个数据源一键切换。数据全部来自本地磁盘，不联网。",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "your-publisher-id",
   "license": "MIT",
   "engines": {

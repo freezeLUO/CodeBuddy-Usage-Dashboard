@@ -8,10 +8,10 @@
 
 ## 安装
 
-从 [Releases](https://github.com/freezeLUO/CodeBuddy-Usage-Dashboard/releases) 下载 `codebuddy-usage-0.2.0.vsix`：
+从 [Releases](https://github.com/freezeLUO/CodeBuddy-Usage-Dashboard/releases) 下载 `codebuddy-usage-0.2.1.vsix`：
 
 ```bash
-code --install-extension codebuddy-usage-0.2.0.vsix
+code --install-extension codebuddy-usage-0.2.1.vsix
 ```
 
 也可以在扩展面板右上角 `…` → 「从 VSIX 安装」，重载窗口后点击活动栏的「CodeBuddy 用量」图标。
@@ -111,7 +111,7 @@ pnpm install
 pnpm run build      # 宿主 esbuild + 两个 webview 产物
 pnpm run typecheck  # tsc + vue-tsc
 pnpm test           # vitest：合成 fixture + 本机真实数据自检
-pnpm run package    # 生成 codebuddy-usage-0.2.0.vsix
+pnpm run package    # 生成 codebuddy-usage-0.2.1.vsix
 ```
 
 用 VSCode 打开 `extension/` 按 `F5` 启动扩展开发宿主；纯前端调试可跑 `node_modules/.bin/vite --config webview/vite.config.ts --port 5299`，打开 `webview/preview/dashboard.html`（加 `?theme=light` 看浅色）。

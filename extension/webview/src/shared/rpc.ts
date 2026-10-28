@@ -1,4 +1,5 @@
 /** 与扩展宿主通信的唯一通道：Promise 化的 query + 事件订阅。 */
+import { toPlain } from './clone'
 import type { Provider, RefreshResult } from './types'
 
 const api = acquireVsCodeApi()
@@ -42,7 +43,14 @@ function send<T>(message: Record<string, unknown>, timeoutMs = 20_000): Promise<
       reject(new Error('与扩展通信超时，请尝试重新加载窗口'))
     }, timeoutMs)
     pending.set(id, { resolve: resolve as (value: unknown) => void, reject, timer })
-    api.postMessage({ ...message, id })
+    try {
+      api.postMessage(toPlain({ ...message, id }))
+    } catch (failure) {
+      // 克隆失败时立即结算，避免界面卡在 20 秒超时
+      window.clearTimeout(timer)
+      pending.delete(id)
+      reject(failure as Error)
+    }
   })
 }
 

@@ -63,7 +63,7 @@
 
 ## 使用
 
-1. 安装 `.vsix`（`code --install-extension codebuddy-usage-0.2.0.vsix`），或按下方「开发」步骤以调试模式启动。
+1. 安装 `.vsix`（`code --install-extension codebuddy-usage-0.2.1.vsix`），或按下方「开发」步骤以调试模式启动。
 2. 点击活动栏的 CodeBuddy 用量图标打开侧边栏；首次会扫描本地数据（约几百毫秒到数秒），之后只做增量刷新。
 3. 点「打开完整看板」在编辑器区查看全量图表与会话明细。
 4. 侧边栏右上角齿轮可配置数据目录；状态栏会显示今日积分（可关闭）。
@@ -101,7 +101,7 @@ pnpm test           # vitest（含本机真实数据自检）
 用 VSCode 打开 `extension/` 目录按 `F5` 启动扩展开发宿主。修改 `webview/src` 后重新执行 `pnpm run build`（或先跑一次 `vite build --watch`）并 `Developer: Reload Window`。
 
 ```bash
-pnpm run package    # 产出 codebuddy-usage-0.2.0.vsix
+pnpm run package    # 产出 codebuddy-usage-0.2.1.vsix
 ```
 
 ### 目录结构

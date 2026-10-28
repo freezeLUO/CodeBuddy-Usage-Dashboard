@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+
+- 修复完整看板与侧边栏加载失败：webview 把 Vue 的 reactive 代理直接 `postMessage` 给宿主，结构化克隆报 `[object Array] could not be cloned`。现在所有请求体发送前统一转成纯数据，克隆失败也会立即报错而不是卡满 20 秒超时。
+
 ## 0.2.0
 
 - 新增 WorkBuddy 数据源：解析 `~/.workbuddy/projects/*/*.jsonl` 里的逐次模型调用，统计 Token、积分、思考 Token、模型与项目分布。
