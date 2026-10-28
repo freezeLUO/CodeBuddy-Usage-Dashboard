@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- 新增 WorkBuddy 数据源：解析 `~/.workbuddy/projects/*/*.jsonl` 里的逐次模型调用，统计 Token、积分、思考 Token、模型与项目分布。
+- 看板与侧边栏顶部新增 CodeBuddy / WorkBuddy 开关，选择写入 `codebuddyUsage.provider`；两个数据源各用一份缓存，切换互不覆盖。
+- 新增配置项 `codebuddyUsage.workbuddyRoot`（默认 `~/.workbuddy`，可用环境变量 `WORKBUDDY_HOME` 覆盖）。
+- WorkBuddy 的 jsonl 不含单次调用耗时，「平均耗时」显示为「未记录」。
+
 ## 0.1.0
 
 首个版本。

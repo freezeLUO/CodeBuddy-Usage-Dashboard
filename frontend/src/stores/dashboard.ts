@@ -7,6 +7,8 @@ import type {
   ModelUsage,
   Overview,
   ProjectUsage,
+  Provider,
+  ProviderSwitchResult,
   RefreshResult,
   TimePoint,
 } from '@/api/types'
@@ -24,6 +26,8 @@ export const useDashboardStore = defineStore('dashboard', {
     optionsLoaded: false,
     loading: false,
     refreshing: false,
+    /** 数据源切换计数：所有依赖会话列表的视图靠它重新拉取 */
+    dataVersion: 0,
   }),
   actions: {
     async loadOptions() {
@@ -62,6 +66,23 @@ export const useDashboardStore = defineStore('dashboard', {
         const { data } = await http.post<RefreshResult>('/refresh')
         await this.loadAll()
         return data
+      } finally {
+        this.refreshing = false
+      }
+    },
+    /** 切换数据源：后端切换缓存库并立即扫描，返回后重新拉取全部数据。 */
+    async switchProvider(provider: Provider): Promise<void> {
+      if (this.meta?.provider === provider) return
+      const filters = useFiltersStore()
+      this.refreshing = true
+      try {
+        await http.post<ProviderSwitchResult>('/provider', { provider })
+        // 上一个数据源的项目 hash 与模型 id 在新数据源里没有意义
+        filters.workspaces = []
+        filters.models = []
+        this.optionsLoaded = false
+        await Promise.all([this.loadAll(), this.loadOptions()])
+        this.dataVersion += 1
       } finally {
         this.refreshing = false
       }

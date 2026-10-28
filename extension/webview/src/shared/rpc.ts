@@ -1,5 +1,5 @@
 /** 与扩展宿主通信的唯一通道：Promise 化的 query + 事件订阅。 */
-import type { RefreshResult } from './types'
+import type { Provider, RefreshResult } from './types'
 
 const api = acquireVsCodeApi()
 
@@ -52,6 +52,11 @@ export function request<T>(method: string, payload: Record<string, unknown> = {}
 
 export function requestRefresh(): Promise<RefreshResult> {
   return send<RefreshResult>({ type: 'refresh' }, 120_000)
+}
+
+/** 切换数据源：宿主会重建数据层并重新扫描，耗时略长于普通查询。 */
+export function setProvider(provider: Provider): Promise<{ provider: Provider }> {
+  return send<{ provider: Provider }>({ type: 'setProvider', payload: { provider } }, 120_000)
 }
 
 export function openDashboard(conversationId?: string): Promise<void> {

@@ -3,6 +3,9 @@ data/*.db
 data/*.db-wal
 data/*.db-shm
 
+# 数据源开关的本地状态
+data/settings.json
+
 # Python
 __pycache__/
 *.py[cod]

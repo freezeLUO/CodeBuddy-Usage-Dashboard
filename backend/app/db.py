@@ -1,12 +1,14 @@
 import sqlite3
 from contextlib import contextmanager
 
-from .config import DB_PATH, SCHEMA_SQL
+from .config import SCHEMA_SQL
+from .provider import db_path
 
 
 def connect() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    con = sqlite3.connect(DB_PATH, timeout=30.0)
+    path = db_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    con = sqlite3.connect(path, timeout=30.0)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA journal_mode = WAL")
     con.execute("PRAGMA foreign_keys = ON")

@@ -2,8 +2,8 @@
 import * as path from 'node:path'
 import * as vscode from 'vscode'
 import { UsageStore, errorText } from '../core'
-import { resolvePaths } from '../core/config'
-import type { RefreshResult } from '../core/types'
+import { PROVIDER_LABELS, normalizeProvider, resolvePaths } from '../core/config'
+import type { Provider, RefreshResult } from '../core/types'
 import type { Logger } from './logger'
 
 const CONFIG_ROOT = 'codebuddyUsage'
@@ -19,6 +19,8 @@ export class UsageService implements vscode.Disposable {
   private timer: NodeJS.Timeout | undefined
   private disposed = false
   private lastProgressAt = 0
+  private storeSignature = ''
+  private rebuildPromise: Promise<void> | null = null
   private readonly refreshEmitter = new vscode.EventEmitter<RefreshResult>()
   private readonly progressEmitter = new vscode.EventEmitter<ProgressPayload>()
   private readonly configListener: vscode.Disposable
@@ -32,6 +34,7 @@ export class UsageService implements vscode.Disposable {
     private readonly logger: Logger,
     private readonly shouldAutoRefresh: () => boolean,
   ) {
+    this.storeSignature = this.readSignature()
     this.storeValue = this.createStore()
     this.readyPromise = this.bootstrap()
     this.configListener = vscode.workspace.onDidChangeConfiguration((event) => {
@@ -51,18 +54,49 @@ export class UsageService implements vscode.Disposable {
     return this.readyPromise
   }
 
+  private readProvider(): Provider {
+    const settings = vscode.workspace.getConfiguration(CONFIG_ROOT)
+    return normalizeProvider(settings.get<string>('provider', 'codebuddy'))
+  }
+
+  private readSignature(): string {
+    const settings = vscode.workspace.getConfiguration(CONFIG_ROOT)
+    return [
+      normalizeProvider(settings.get<string>('provider', 'codebuddy')),
+      settings.get<string>('dataRoot', ''),
+      settings.get<string>('workbuddyRoot', ''),
+      settings.get<string>('workspaceStorageRoot', ''),
+    ].join('|')
+  }
+
   private createStore(): UsageStore {
     const settings = vscode.workspace.getConfiguration(CONFIG_ROOT)
+    const provider = normalizeProvider(settings.get<string>('provider', 'codebuddy'))
     const paths = resolvePaths({
       dataRoot: settings.get<string>('dataRoot', ''),
       workspaceStorageRoot: settings.get<string>('workspaceStorageRoot', ''),
+      workbuddyRoot: settings.get<string>('workbuddyRoot', ''),
+      provider,
     })
     return new UsageStore({
       dataRoot: paths.dataRoot,
       workspaceStorageRoot: paths.workspaceStorageRoot,
-      cacheFile: path.join(this.context.globalStorageUri.fsPath, 'usage-cache.json'),
+      provider,
+      // 两个数据源结构完全不同，各留一份缓存，切换时互不覆盖
+      cacheFile: path.join(
+        this.context.globalStorageUri.fsPath,
+        provider === 'workbuddy' ? 'usage-cache-workbuddy.json' : 'usage-cache.json',
+      ),
       log: (message, level = 'info') => this.logger[level](message),
     })
+  }
+
+  /** 切换数据源：写入设置 → 重建 Store → 重新扫描。返回后即可查询新数据源。 */
+  async setProvider(provider: Provider): Promise<void> {
+    if (this.storeValue.provider === provider) return
+    const settings = vscode.workspace.getConfiguration(CONFIG_ROOT)
+    await settings.update('provider', provider, vscode.ConfigurationTarget.Global)
+    await this.ensureRebuild()
   }
 
   private async bootstrap(): Promise<void> {
@@ -95,7 +129,8 @@ export class UsageService implements vscode.Disposable {
     } catch (error) {
       this.updateStatusBar()
       if (notifyError) {
-        void vscode.window.showErrorMessage(`CodeBuddy 用量刷新失败：${errorText(error)}`)
+        const label = PROVIDER_LABELS[this.storeValue.provider]
+        void vscode.window.showErrorMessage(`${label} 用量刷新失败：${errorText(error)}`)
       }
       throw error
     }
@@ -112,7 +147,23 @@ export class UsageService implements vscode.Disposable {
   }
 
   private async onConfigChange(): Promise<void> {
-    this.logger.info('检测到配置变更，重建数据源')
+    if (this.readSignature() === this.storeSignature) return
+    await this.ensureRebuild()
+  }
+
+  private ensureRebuild(): Promise<void> {
+    if (!this.rebuildPromise) {
+      this.rebuildPromise = this.rebuild().finally(() => {
+        this.rebuildPromise = null
+      })
+    }
+    return this.rebuildPromise
+  }
+
+  private async rebuild(): Promise<void> {
+    const provider = this.readProvider()
+    this.logger.info(`数据源切换为 ${PROVIDER_LABELS[provider]}，重建数据源`)
+    this.storeSignature = this.readSignature()
     this.storeValue = this.createStore()
     this.readyPromise = (async () => {
       await this.storeValue.load()
@@ -142,9 +193,10 @@ export class UsageService implements vscode.Disposable {
     }
     const credit = this.storeValue.todayCredit()
     const last = this.storeValue.lastRefreshMs
-    this.statusBar.text = `$(graph) 今日 ${credit.toFixed(2)} 积分`
+    const label = PROVIDER_LABELS[this.storeValue.provider]
+    this.statusBar.text = `$(graph) ${label} 今日 ${credit.toFixed(2)} 积分`
     const tooltip = new vscode.MarkdownString()
-    tooltip.appendMarkdown('**CodeBuddy 用量**\n\n')
+    tooltip.appendMarkdown(`**${label} 用量**\n\n`)
     tooltip.appendMarkdown(`今日积分：${credit.toFixed(2)}\n\n`)
     tooltip.appendMarkdown(`上次同步：${last ? new Date(last).toLocaleString('zh-CN') : '尚未同步'}\n\n`)
     tooltip.appendMarkdown('点击打开完整看板')

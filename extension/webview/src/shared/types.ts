@@ -9,6 +9,7 @@ export type {
   OptionsPayload,
   Overview,
   ProjectRow,
+  Provider,
   RefreshResult,
   RequestRow,
   SidebarPayload,

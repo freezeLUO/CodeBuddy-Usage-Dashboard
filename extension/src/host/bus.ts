@@ -3,7 +3,7 @@ import type * as vscode from 'vscode'
 import type { UsageStore } from '../core'
 import { errorText } from '../core'
 import { Filters } from '../core/filters'
-import type { ConversationQuery, RefreshResult } from '../core/types'
+import type { ConversationQuery, Provider, RefreshResult } from '../core/types'
 import type { Logger } from './logger'
 import type { ViewKind } from './webviewHtml'
 
@@ -11,6 +11,7 @@ export interface HostActions {
   refresh(): Promise<RefreshResult>
   refreshIfStale(): void
   waitReady(): Promise<void>
+  setProvider(provider: Provider): Promise<void>
   openDashboard(options?: { conversationId?: string }): void
   openSettings(): void
   revealDataRoot(): void
@@ -127,6 +128,12 @@ export async function handleMessage(
       case 'refresh': {
         const result = await actions.refresh()
         post({ id, type: 'result', data: result })
+        return
+      }
+      case 'setProvider': {
+        const provider: Provider = payload.provider === 'workbuddy' ? 'workbuddy' : 'codebuddy'
+        await actions.setProvider(provider)
+        post({ id, type: 'result', data: { provider } })
         return
       }
       case 'openDashboard': {

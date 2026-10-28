@@ -3,7 +3,7 @@ import type { CacheFile, MessageInfo, ParsedConversation, RefreshResult, ScanFil
 import { discover, fingerprint, messagePath, type ConvRef } from './scanner'
 import { buildConversation, messageReadPlan, readIndex, readMessage } from './parser'
 import { resolveWorkspaces } from './resolver'
-import { CACHE_SCHEMA_VERSION } from './cache'
+import { CACHE_SCHEMA_VERSION, removeConversation } from './cache'
 
 const DEFAULT_CONCURRENCY = 6
 
@@ -100,20 +100,6 @@ async function mapLimit<T, R>(
   })
   await Promise.all(runners)
   return results
-}
-
-function removeConversation(cache: CacheFile, conversationId: string): void {
-  delete cache.conversations[conversationId]
-  const removedRequests = new Set<string>()
-  cache.requests = cache.requests.filter((request) => {
-    if (request.conversation_id !== conversationId) return true
-    removedRequests.add(request.request_id)
-    return false
-  })
-  for (const requestId of removedRequests) delete cache.stats[requestId]
-  for (const [file, record] of Object.entries(cache.scanFiles)) {
-    if (record.conversation_id === conversationId) delete cache.scanFiles[file]
-  }
 }
 
 export async function refreshCache(prev: CacheFile, options: RefreshOptions): Promise<RefreshOutcome> {

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel
 
 
@@ -130,5 +132,17 @@ class RefreshResult(BaseModel):
 class Meta(BaseModel):
     last_refresh_ms: int | None
     db_path: str
+    data_root: str
+    provider: str
+    provider_label: str
     workspace_count: int
     conversation_count: int
+
+
+class ProviderSwitchRequest(BaseModel):
+    provider: Literal["codebuddy", "workbuddy"]
+
+
+class ProviderSwitch(BaseModel):
+    provider: str
+    refresh: RefreshResult

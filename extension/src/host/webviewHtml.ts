@@ -40,7 +40,7 @@ export function renderHtml(webview: vscode.Webview, view: ViewKind, assets: Html
     `script-src 'nonce-${nonce}'`,
   ].join('; ')
 
-  const title = view === 'sidebar' ? 'CodeBuddy 用量' : 'CodeBuddy 用量看板'
+  const title = view === 'sidebar' ? '用量' : '用量看板'
   const body = assets
     ? `<div id="app" data-view="${view}"></div>
 <script type="module" nonce="${nonce}">${escapeScript(assets.script)}</script>`

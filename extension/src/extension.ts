@@ -1,5 +1,5 @@
 import * as vscode from 'vscode'
-import { isDirectory, resolvePaths } from './core/config'
+import { PROVIDER_LABELS, isDirectory, normalizeProvider, resolvePaths } from './core/config'
 import { errorText } from './core'
 import { DashboardPanel } from './host/dashboardPanel'
 import { createLogger } from './host/logger'
@@ -25,6 +25,15 @@ export function activate(context: vscode.ExtensionContext): void {
     waitReady: () => usage.whenReady,
     refresh: () => usage.refresh(),
     refreshIfStale: () => void usage.refreshIfStale(),
+    setProvider: async (provider) => {
+      try {
+        await usage.setProvider(provider)
+        DashboardPanel.setTitle(`${PROVIDER_LABELS[provider]} 用量看板`)
+      } catch (error) {
+        logger.error(`切换数据源失败：${errorText(error)}`)
+        void vscode.window.showErrorMessage(`切换数据源失败：${errorText(error)}`)
+      }
+    },
     openDashboard: (options) => {
       dashboard = DashboardPanel.show(context.extensionUri, actions, logger, options)
     },
@@ -89,18 +98,23 @@ export function activate(context: vscode.ExtensionContext): void {
 
 async function revealDataRoot(logger: ReturnType<typeof createLogger>): Promise<void> {
   const settings = vscode.workspace.getConfiguration('codebuddyUsage')
+  const provider = normalizeProvider(settings.get<string>('provider', 'codebuddy'))
   const paths = resolvePaths({
     dataRoot: settings.get<string>('dataRoot', ''),
     workspaceStorageRoot: settings.get<string>('workspaceStorageRoot', ''),
+    workbuddyRoot: settings.get<string>('workbuddyRoot', ''),
+    provider,
   })
+  const label = PROVIDER_LABELS[provider]
   if (!(await isDirectory(paths.dataRoot))) {
-    logger.warn(`数据目录不存在：${paths.dataRoot}`)
+    logger.warn(`${label} 数据目录不存在：${paths.dataRoot}`)
     const choice = await vscode.window.showWarningMessage(
-      `未找到 CodeBuddy 数据目录：${paths.dataRoot}`,
+      `未找到 ${label} 数据目录：${paths.dataRoot}`,
       '打开设置',
     )
     if (choice === '打开设置') {
-      await vscode.commands.executeCommand('workbench.action.openSettings', 'codebuddyUsage.dataRoot')
+      const key = provider === 'workbuddy' ? 'codebuddyUsage.workbuddyRoot' : 'codebuddyUsage.dataRoot'
+      await vscode.commands.executeCommand('workbench.action.openSettings', key)
     }
     return
   }

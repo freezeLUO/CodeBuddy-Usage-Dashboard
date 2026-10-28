@@ -13,6 +13,9 @@ const collapsed = ref(false)
 const lastRefresh = computed(() =>
   formatDateTime(dashboard.meta?.last_refresh_ms ?? null),
 )
+const providerLabel = computed(() => dashboard.meta?.provider_label ?? 'CodeBuddy')
+const isWorkbuddy = computed(() => dashboard.meta?.provider === 'workbuddy')
+const logoText = computed(() => (isWorkbuddy.value ? 'WB' : 'CB'))
 
 async function onRefresh() {
   const result = await dashboard.refresh()
@@ -20,16 +23,26 @@ async function onRefresh() {
     `已同步：更新 ${result.updated} 个会话，删除 ${result.deleted} 个，耗时 ${result.duration_ms} ms`,
   )
 }
+
+async function onToggleProvider(value: string | number | boolean) {
+  const next = value ? 'workbuddy' : 'codebuddy'
+  try {
+    await dashboard.switchProvider(next)
+    ElMessage.success(`已切换到 ${dashboard.meta?.provider_label ?? next}`)
+  } catch {
+    // 拦截器已提示错误，这里只需把开关状态回退
+  }
+}
 </script>
 
 <template>
   <header class="header" :class="{ collapsed }">
     <div class="brand">
-      <div class="logo">CB</div>
+      <div class="logo">{{ logoText }}</div>
       <div class="titles">
-        <h1>CodeBuddy 用量看板</h1>
+        <h1>{{ providerLabel }} 用量看板</h1>
         <span class="sub muted">
-          {{ collapsed ? '' : '本地 CodeBuddy 会话与 Token 消耗统计' }}
+          {{ collapsed ? '' : `本地 ${providerLabel} 会话与 Token 消耗统计` }}
         </span>
       </div>
     </div>
@@ -52,6 +65,16 @@ async function onRefresh() {
     </nav>
 
     <div class="actions">
+      <div class="provider-switch" title="切换统计的数据源">
+        <span class="muted">数据源</span>
+        <el-switch
+          :model-value="isWorkbuddy"
+          active-text="WorkBuddy"
+          inactive-text="CodeBuddy"
+          :loading="dashboard.refreshing"
+          @change="onToggleProvider"
+        />
+      </div>
       <span class="sync muted">上次同步：{{ lastRefresh }}</span>
       <el-button type="primary" :loading="dashboard.refreshing" @click="onRefresh">
         刷新数据
@@ -138,6 +161,13 @@ async function onRefresh() {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.provider-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
 }
 
 .sync {

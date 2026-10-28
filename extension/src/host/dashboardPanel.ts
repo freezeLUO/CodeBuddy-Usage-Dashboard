@@ -16,6 +16,11 @@ export class DashboardPanel implements vscode.Disposable {
     DashboardPanel.current?.postEvent(event, data)
   }
 
+  /** 切换数据源后同步编辑器标签页标题。 */
+  static setTitle(title: string): void {
+    if (DashboardPanel.current) DashboardPanel.current.panel.title = title
+  }
+
   static show(
     extensionUri: vscode.Uri,
     actions: HostActions,
@@ -28,9 +33,10 @@ export class DashboardPanel implements vscode.Disposable {
       return DashboardPanel.current
     }
 
+    const provider = actions.getStore().provider
     const panel = vscode.window.createWebviewPanel(
       DashboardPanel.viewType,
-      'CodeBuddy 用量看板',
+      `${provider === 'workbuddy' ? 'WorkBuddy' : 'CodeBuddy'} 用量看板`,
       vscode.ViewColumn.Active,
       {
         enableScripts: true,

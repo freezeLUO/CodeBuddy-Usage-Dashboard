@@ -59,7 +59,7 @@ const cards = computed<Kpi[]>(() => {
     {
       label: '思考 Token',
       value: formatTokens(o.thinking_tokens),
-      hint: `平均耗时 ${formatDuration(o.avg_elapsed_ms)}`,
+      hint: `平均耗时 ${o.avg_elapsed_ms ? formatDuration(o.avg_elapsed_ms) : '未记录'}`,
       accent: '#4a9d7f',
     },
   ]

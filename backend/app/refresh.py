@@ -1,11 +1,11 @@
-"""增量刷新编排：以 conversation 为失效单元。"""
+"""增量刷新编排：以 conversation 为失效单元，按当前数据源分派到对应采集器。"""
 import threading
 import time
 from pathlib import Path
 
-from .config import DB_PATH
+from . import provider
 from .db import tx
-from .ingest import scanner, store
+from .ingest import scanner, store, workbuddy
 from .ingest.parser import (
     ParsedConversation,
     build_conversation,
@@ -67,10 +67,14 @@ def _load_scan_state(con) -> tuple[dict[str, tuple[int, int]], dict[str, list[tu
 def refresh() -> dict:
     started = time.time()
     with _lock:
-        return _refresh_locked(started)
+        name = provider.current()
+        db_file = provider.db_path(name)
+        if name == "workbuddy":
+            return workbuddy.refresh(started, db_file)
+        return _refresh_locked(started, db_file)
 
 
-def _refresh_locked(started: float) -> dict:
+def _refresh_locked(started: float, db_file: Path) -> dict:
     found = scanner.discover()
 
     with tx() as con:
@@ -122,5 +126,5 @@ def _refresh_locked(started: float) -> dict:
         "errors": errors,
         "scanned": len(found),
         "duration_ms": int((time.time() - started) * 1000),
-        "db_path": str(DB_PATH),
+        "db_path": str(db_file),
     }

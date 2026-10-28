@@ -112,11 +112,22 @@ export interface RefreshResult {
   db_path: string
 }
 
+/** 数据源：两个产品的本地数据结构不同，由后端分别解析并分库缓存。 */
+export type Provider = 'codebuddy' | 'workbuddy'
+
 export interface Meta {
   last_refresh_ms: number | null
   db_path: string
+  data_root: string
+  provider: Provider
+  provider_label: string
   workspace_count: number
   conversation_count: number
+}
+
+export interface ProviderSwitchResult {
+  provider: Provider
+  refresh: RefreshResult
 }
 
 export interface FilterParams {

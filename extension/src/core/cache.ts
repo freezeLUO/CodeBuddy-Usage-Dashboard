@@ -55,6 +55,21 @@ function normalize(raw: unknown): CacheFile | null {
   }
 }
 
+/** 级联删除一个会话及其请求、统计与扫描账本，供两种数据源的刷新共用。 */
+export function removeConversation(cache: CacheFile, conversationId: string): void {
+  delete cache.conversations[conversationId]
+  const removed = new Set<string>()
+  cache.requests = cache.requests.filter((request) => {
+    if (request.conversation_id !== conversationId) return true
+    removed.add(request.request_id)
+    return false
+  })
+  for (const requestId of removed) delete cache.stats[requestId]
+  for (const [file, record] of Object.entries(cache.scanFiles)) {
+    if (record.conversation_id === conversationId) delete cache.scanFiles[file]
+  }
+}
+
 export async function loadCache(file: string): Promise<CacheFile | null> {
   try {
     const raw = JSON.parse(await fs.readFile(file, 'utf8')) as unknown

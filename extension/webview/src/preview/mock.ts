@@ -197,6 +197,7 @@ const SIDEBAR: SidebarPayload = {
     cache_path: 'C:/Users/demo/AppData/Roaming/Code/User/globalStorage/codebuddy-usage/usage-cache.json',
     data_root: 'C:/Users/demo/AppData/Local/CodeBuddyExtension/Data',
     data_root_exists: true,
+    provider: 'codebuddy',
     workspace_count: 6,
     conversation_count: 40,
     request_count: 168,
@@ -227,7 +228,11 @@ const RESULTS: Record<string, unknown> = {
 export function installMockBridge(): void {
   const api = {
     postMessage(message: unknown): void {
-      const data = message as { id?: number; type?: string; payload?: { method?: string } }
+      const data = message as {
+        id?: number
+        type?: string
+        payload?: { method?: string; provider?: string }
+      }
       if (data?.type === 'query') {
         const method = data.payload?.method ?? ''
         const result = RESULTS[method] ?? null
@@ -247,6 +252,13 @@ export function installMockBridge(): void {
             '*',
           )
         }, 320)
+        return
+      }
+      if (data?.type === 'setProvider') {
+        const provider = data.payload?.provider === 'workbuddy' ? 'workbuddy' : 'codebuddy'
+        window.setTimeout(() => {
+          window.postMessage({ id: data.id, type: 'result', data: { provider } }, '*')
+        }, 200)
         return
       }
       if (data?.type === 'openDashboard' || data?.type === 'openSettings' || data?.type === 'copyText') {

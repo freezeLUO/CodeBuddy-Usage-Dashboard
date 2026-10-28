@@ -2,7 +2,7 @@
 from datetime import date, datetime, time
 from sqlite3 import Connection
 
-from ..config import DB_PATH
+from .. import provider
 from ..db import connect
 
 
@@ -413,9 +413,13 @@ def meta(conversation_count_only: bool = False) -> dict:
         workspaces = con.execute(
             "SELECT COUNT(DISTINCT workspace_hash) FROM conversation"
         ).fetchone()[0]
+        name = provider.current()
         return {
             "last_refresh_ms": int(last[0]) if last else None,
-            "db_path": str(DB_PATH),
+            "db_path": str(provider.db_path(name)),
+            "data_root": str(provider.data_root(name)),
+            "provider": name,
+            "provider_label": provider.label(name),
             "workspace_count": workspaces,
             "conversation_count": con.execute("SELECT COUNT(*) FROM conversation").fetchone()[0],
         }

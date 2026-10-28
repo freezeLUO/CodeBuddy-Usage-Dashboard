@@ -45,7 +45,7 @@ const cards = computed(() => {
     {
       label: '思考 Token',
       value: formatTokens(overview.thinking_tokens),
-      hint: `平均耗时 ${formatDuration(overview.avg_elapsed_ms)}`,
+      hint: `平均耗时 ${overview.avg_elapsed_ms ? formatDuration(overview.avg_elapsed_ms) : '未记录'}`,
       accent: 'var(--vscode-charts-blue, #4d8dff)',
     },
   ]

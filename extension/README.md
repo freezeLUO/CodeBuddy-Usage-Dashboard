@@ -1,7 +1,8 @@
-# CodeBuddy 用量看板 · VSCode 扩展
+# CodeBuddy / WorkBuddy 用量看板 · VSCode 扩展
 
-在 VSCode 侧边栏直接查看本机 CodeBuddy 的 Token 与积分消耗：每日趋势、项目与模型分布、会话与逐请求明细。
-数据全部来自本机磁盘（`%LOCALAPPDATA%\CodeBuddyExtension\Data`），**不联网、不上传、不依赖任何官方接口**。
+在 VSCode 侧边栏直接查看本机 CodeBuddy 与 WorkBuddy 的 Token 与积分消耗：每日趋势、项目与模型分布、会话与逐请求明细。
+看板与侧边栏顶部有数据源开关，可在两个产品之间一键切换，选择会写入 VSCode 设置。
+数据全部来自本机磁盘（`%LOCALAPPDATA%\CodeBuddyExtension\Data`、`~/.workbuddy`），**不联网、不上传、不依赖任何官方接口**。
 
 ![在 VSCode 侧边栏中的实际效果](media/screenshot-vscode.png)
 
@@ -23,6 +24,7 @@
 - Token 面积线 + 积分虚线的迷你趋势，悬停查看当日数值
 - 项目消耗 Top 5、模型用量 Top 5、最近会话（点击直接在编辑器中定位该会话）
 - 手动刷新、上次同步时间、数据目录设置入口
+- 顶部 CodeBuddy / WorkBuddy 数据源开关（侧边栏与完整看板各一个，状态共享）
 
 **完整看板（编辑器区标签页）**
 - 6 项 KPI：总 Token、总积分、请求数、会话数、缓存命中率、思考 Token
@@ -42,11 +44,26 @@
 - `credit` 是 CodeBuddy 计费积分。免费预览模型（`hy3`、`hy4-preview`）的 `credit` 为 **0 是真实值**，不会过滤。
 - 模型名只存在于消息文件里，通过 `extra.requestId == requests[].id` 关联。
 - 项目目录名 `workspaceHash` 由工作区路径反推：`md5(路径.replace('/', '\\') 且盘符小写、去前导反斜杠)`；无工作区窗口为 `md5("\\")`。
+
+### WorkBuddy 数据源
+
+| 路径 | 内容 |
+|---|---|
+| `~/.workbuddy/projects/<工作区>/<会话ID>.jsonl` | 会话逐条事件，带 `providerData.rawUsage` 的行就是一次模型调用 |
+| `~/.workbuddy/workbuddy.db` | WorkBuddy 自己的会话库（本扩展不读，仅作对照） |
+| `~/.workbuddy/traces/` | 30 天内的请求轨迹（本扩展不用，避免与 jsonl 重复计数） |
+
+- 一次模型调用 = 一条请求：token 取 `rawUsage.prompt_tokens / completion_tokens / prompt_cache_hit_tokens`。
+- 积分取 `rawUsage.credit`，按该次调用发生的时间归日；思考 Token 取 `rawUsage.completion_thinking_tokens`。
+- 会话标题优先取 `aiTitle` 事件，缺失时回退到首条用户提问（会剥掉 `<system-reminder>` 上下文）。
+- 项目名取行内 `cwd`；`requestModelName` 为 `Auto` 时改用实际模型 id，避免把路由策略当模型名。
+- WorkBuddy 的 jsonl 不记录单次耗时，因此「平均耗时」显示为「未记录」。
+- 两个数据源各用一份缓存（`usage-cache.json` / `usage-cache-workbuddy.json`），切换互不影响。
 - 解析遵循「最小读取集」：每个会话只读最早一条 user 消息（抽标题）+ 每个已完成请求内最后一个 assistant 消息（取模型与快照），通常只占全部消息文件的 10% 以内。
 
 ## 使用
 
-1. 安装 `.vsix`（`code --install-extension codebuddy-usage-0.1.0.vsix`），或按下方「开发」步骤以调试模式启动。
+1. 安装 `.vsix`（`code --install-extension codebuddy-usage-0.2.0.vsix`），或按下方「开发」步骤以调试模式启动。
 2. 点击活动栏的 CodeBuddy 用量图标打开侧边栏；首次会扫描本地数据（约几百毫秒到数秒），之后只做增量刷新。
 3. 点「打开完整看板」在编辑器区查看全量图表与会话明细。
 4. 侧边栏右上角齿轮可配置数据目录；状态栏会显示今日积分（可关闭）。
@@ -55,7 +72,9 @@
 
 | 配置 | 默认 | 说明 |
 |---|---|---|
+| `codebuddyUsage.provider` | `codebuddy` | 统计哪个产品：`codebuddy` / `workbuddy`。看板与侧边栏顶部的开关会写回这里 |
 | `codebuddyUsage.dataRoot` | 平台默认 | CodeBuddy 数据根目录。仅 Windows 路径经过实测，macOS/Linux 如无数据请手动指定 |
+| `codebuddyUsage.workbuddyRoot` | `~/.workbuddy` | WorkBuddy 数据根目录，可用环境变量 `WORKBUDDY_HOME` 覆盖 |
 | `codebuddyUsage.workspaceStorageRoot` | 平台默认 | VSCode `workspaceStorage` 目录，用于项目路径反查；缺失时项目名会退化为哈希前缀 |
 | `codebuddyUsage.autoRefreshMinutes` | `5` | 定时增量刷新间隔，`0` 关闭 |
 | `codebuddyUsage.staleMinutes` | `2` | 视图重新可见时，超过该分钟数才刷新 |
@@ -66,6 +85,8 @@
 - Windows：`%LOCALAPPDATA%\CodeBuddyExtension\Data`
 - macOS：`~/Library/Application Support/CodeBuddyExtension/Data`
 - Linux：`~/.config/CodeBuddyExtension/Data`
+
+WorkBuddy 三个平台一致，均为 `~/.workbuddy`。
 
 ## 开发
 
@@ -80,7 +101,7 @@ pnpm test           # vitest（含本机真实数据自检）
 用 VSCode 打开 `extension/` 目录按 `F5` 启动扩展开发宿主。修改 `webview/src` 后重新执行 `pnpm run build`（或先跑一次 `vite build --watch`）并 `Developer: Reload Window`。
 
 ```bash
-pnpm run package    # 产出 codebuddy-usage-0.1.0.vsix
+pnpm run package    # 产出 codebuddy-usage-0.2.0.vsix
 ```
 
 ### 目录结构

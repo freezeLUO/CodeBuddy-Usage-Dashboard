@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { SidebarPayload } from '../shared/types'
+import type { Provider, SidebarPayload } from '../shared/types'
 import {
   getState,
   notifyReady,
@@ -9,8 +9,10 @@ import {
   openSettings,
   request,
   requestRefresh,
+  setProvider as switchProvider,
   setState,
 } from '../shared/rpc'
+import { PROVIDER_LABELS, PROVIDER_OPTIONS, normalizeProvider } from '../shared/provider'
 import { SIDEBAR_RANGES, rangeForPreset } from '../shared/presets'
 import { formatClock, formatCredit } from '../shared/format'
 import SegmentedControl from '../shared/components/SegmentedControl.vue'
@@ -29,6 +31,8 @@ const preset = ref(
     : '30d',
 )
 const data = ref<SidebarPayload | null>(null)
+const provider = ref<Provider>('codebuddy')
+const switching = ref(false)
 const loading = ref(true)
 const refreshing = ref(false)
 const error = ref<string | null>(null)
@@ -41,6 +45,7 @@ const filters = computed(() => ({
 }))
 
 const meta = computed(() => data.value?.meta ?? null)
+const providerLabel = computed(() => PROVIDER_LABELS[provider.value])
 const state = computed(() => {
   if (!data.value) return 'loading'
   if (!data.value.meta.data_root_exists) return 'no-root'
@@ -56,11 +61,29 @@ async function load(silent = false): Promise<void> {
   if (!silent) loading.value = true
   error.value = null
   try {
-    data.value = await request<SidebarPayload>('sidebar', { filters: filters.value })
+    const next = await request<SidebarPayload>('sidebar', { filters: filters.value })
+    data.value = next
+    provider.value = normalizeProvider(next.meta.provider)
   } catch (failure) {
     error.value = (failure as Error).message
   } finally {
     loading.value = false
+  }
+}
+
+async function changeProvider(next: Provider): Promise<void> {
+  if (next === provider.value || switching.value) return
+  switching.value = true
+  error.value = null
+  provider.value = next
+  try {
+    await switchProvider(next)
+    await load()
+  } catch (failure) {
+    error.value = (failure as Error).message
+    provider.value = normalizeProvider(meta.value?.provider)
+  } finally {
+    switching.value = false
   }
 }
 
@@ -117,7 +140,7 @@ watch(preset, (value) => {
     <header class="shrink-0 px-3 pb-2 pt-3">
       <div class="flex items-start justify-between gap-2">
         <div class="min-w-0">
-          <h1 class="text-[13px] font-semibold tracking-tight">CodeBuddy 用量</h1>
+          <h1 class="text-[13px] font-semibold tracking-tight">{{ providerLabel }} 用量</h1>
           <p class="mt-0.5 flex items-center gap-1 text-[10.5px]" :style="{ color: 'var(--cb-fg-soft)' }">
             <Icon name="clock" :size="10" />
             上次同步 {{ formatClock(meta?.last_refresh_ms) }}
@@ -141,6 +164,16 @@ watch(preset, (value) => {
     </header>
 
     <div class="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-3 pb-3">
+      <div class="flex items-center gap-1.5">
+        <SegmentedControl
+          :model-value="provider"
+          :options="PROVIDER_OPTIONS"
+          compact
+          class="flex-1"
+          @update:model-value="changeProvider"
+        />
+        <span v-if="switching" class="shrink-0 text-[10px]" :style="{ color: 'var(--cb-fg-soft)' }">切换中…</span>
+      </div>
       <SegmentedControl v-model="preset" :options="SIDEBAR_RANGES" compact />
 
       <div
@@ -160,7 +193,7 @@ watch(preset, (value) => {
       <EmptyState
         v-else-if="state === 'no-root'"
         icon="folder"
-        title="未找到 CodeBuddy 数据目录"
+        :title="`未找到 ${providerLabel} 数据目录`"
         :description="`默认路径：${meta?.data_root ?? ''}。可以手动指定数据目录后重新加载。`"
         tone="error"
       >
@@ -172,7 +205,7 @@ watch(preset, (value) => {
         v-else-if="state === 'empty'"
         icon="database"
         title="还没有解析到用量数据"
-        description="请确认 CodeBuddy 已经产生过会话，然后点击刷新重新扫描本地磁盘。"
+        :description="`请确认 ${providerLabel} 已经产生过会话，然后点击刷新重新扫描本地磁盘。`"
       >
         <button type="button" class="cb-btn cb-btn--primary" @click="refresh">立即刷新</button>
       </EmptyState>

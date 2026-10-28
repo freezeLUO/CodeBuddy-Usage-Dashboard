@@ -1,17 +1,17 @@
-# CodeBuddy 用量看板 · VSCode 扩展
+# CodeBuddy / WorkBuddy 用量看板 · VSCode 扩展
 
-在 VSCode 侧边栏查看本机 CodeBuddy 的 Token 与积分消耗：**每天烧了多少 Token、花了多少积分、哪个项目在烧、用的哪个模型、缓存命中多少。**
+在 VSCode 侧边栏查看本机 CodeBuddy 与 WorkBuddy 的 Token 与积分消耗：**每天烧了多少 Token、花了多少积分、哪个项目在烧、用的哪个模型、缓存命中多少。**
 
-数据全部来自本机磁盘，不联网、不上传、不需要 Python 环境。
+看板与侧边栏顶部各有一个数据源开关，在 CodeBuddy / WorkBuddy 之间一键切换，选择会持久化到 VSCode 设置。数据全部来自本机磁盘（`%LOCALAPPDATA%\CodeBuddyExtension\Data`、`~/.workbuddy`），不联网、不上传、不需要 Python 环境。
 
 ![在 VSCode 中的实际效果](extension/media/screenshot-vscode.png)
 
 ## 安装
 
-从 [Releases](https://github.com/freezeLUO/CodeBuddy-Usage-Dashboard/releases) 下载 `codebuddy-usage-0.1.0.vsix`：
+从 [Releases](https://github.com/freezeLUO/CodeBuddy-Usage-Dashboard/releases) 下载 `codebuddy-usage-0.2.0.vsix`：
 
 ```bash
-code --install-extension codebuddy-usage-0.1.0.vsix
+code --install-extension codebuddy-usage-0.2.0.vsix
 ```
 
 也可以在扩展面板右上角 `…` → 「从 VSIX 安装」，重载窗口后点击活动栏的「CodeBuddy 用量」图标。
@@ -27,6 +27,7 @@ code --install-extension codebuddy-usage-0.1.0.vsix
 - Token 面积线 + 积分虚线的迷你趋势，悬停查看当日数值
 - 项目消耗 Top 5（占比条）、模型用量 Top 5、最近会话（点击直接在编辑器中定位）
 - 手动刷新、上次同步时间、数据目录设置入口；状态栏常驻显示今日积分
+- 数据源开关：CodeBuddy / WorkBuddy 一键切换，两套数据各自缓存互不干扰
 
 **完整看板（编辑器区标签页）**
 
@@ -41,7 +42,9 @@ code --install-extension codebuddy-usage-0.1.0.vsix
 
 | 配置 | 默认 | 说明 |
 |---|---|---|
+| `codebuddyUsage.provider` | `codebuddy` | 统计哪个产品：`codebuddy` / `workbuddy`；界面的开关会写回这里 |
 | `codebuddyUsage.dataRoot` | 平台默认 | CodeBuddy 数据根目录，Windows 默认 `%LOCALAPPDATA%\CodeBuddyExtension\Data` |
+| `codebuddyUsage.workbuddyRoot` | `~/.workbuddy` | WorkBuddy 数据根目录，可用 `WORKBUDDY_HOME` 覆盖 |
 | `codebuddyUsage.workspaceStorageRoot` | 平台默认 | VSCode `workspaceStorage`，用于项目路径反查；缺失时项目名退化为哈希前缀 |
 | `codebuddyUsage.autoRefreshMinutes` | `5` | 定时增量刷新间隔，`0` 关闭 |
 | `codebuddyUsage.staleMinutes` | `2` | 视图重新可见时，数据超过该分钟数才刷新 |
@@ -65,6 +68,18 @@ CodeBuddy 把数据写在 `%LOCALAPPDATA%\CodeBuddyExtension\`（**不在** VSCo
 - `credit` 是 CodeBuddy 计费积分。免费预览模型（`hy3`、`hy4-preview`）的 `credit` 为 **0 是真实值**，不是缺失。
 - 模型名只存在于消息文件里，通过 `extra.requestId == requests[].id` 关联（实测 100% 命中）。
 - `workspaceHash` 可由工作区路径反推：`md5(路径.replace('/', '\\') 且盘符小写、去前导反斜杠)`；无工作区窗口为 `md5("\\")`。
+
+WorkBuddy 的结构完全不同，走独立采集器：
+
+| 路径 | 内容 |
+|---|---|
+| `~/.workbuddy/projects/<工作区>/<会话ID>.jsonl` | 会话逐条事件，带 `providerData.rawUsage` 的行即一次模型调用 |
+| `~/.workbuddy/workbuddy.db` | WorkBuddy 自己的会话库（本工具不读，避免与 jsonl 口径混用） |
+
+- token 取 `rawUsage.prompt_tokens / completion_tokens / prompt_cache_hit_tokens`，积分取 `rawUsage.credit` 并按调用发生时间归日。
+- 思考 Token 取 `rawUsage.completion_thinking_tokens`；标题优先 `aiTitle`，缺失时回退首条用户提问。
+- 项目名取行内 `cwd`；`requestModelName` 为 `Auto` 时改用实际模型 id。
+- jsonl 没有单次耗时字段，因此 WorkBuddy 的「平均耗时」显示为「未记录」。
 
 ### 解析策略
 
@@ -96,7 +111,7 @@ pnpm install
 pnpm run build      # 宿主 esbuild + 两个 webview 产物
 pnpm run typecheck  # tsc + vue-tsc
 pnpm test           # vitest：合成 fixture + 本机真实数据自检
-pnpm run package    # 生成 codebuddy-usage-0.1.0.vsix
+pnpm run package    # 生成 codebuddy-usage-0.2.0.vsix
 ```
 
 用 VSCode 打开 `extension/` 按 `F5` 启动扩展开发宿主；纯前端调试可跑 `node_modules/.bin/vite --config webview/vite.config.ts --port 5299`，打开 `webview/preview/dashboard.html`（加 `?theme=light` 看浅色）。
@@ -138,7 +153,8 @@ Windows 下也可以直接双击 `start.bat`（会检查前端产物、必要时
 | GET | `/api/conversations?page=&size=&q=&sort=&order=` | 会话列表（分页、标题搜索、排序） |
 | GET | `/api/conversations/{id}` | 会话详情：逐请求明细 |
 | POST | `/api/refresh` | 触发增量刷新，返回 `added/updated/deleted/errors/duration_ms` |
-| GET | `/api/meta` | 上次同步时间、库路径、项目/会话总数 |
+| POST | `/api/provider` | 切换数据源（`{"provider": "workbuddy"}`），返回切换结果与本次刷新统计 |
+| GET | `/api/meta` | 上次同步时间、库路径、数据源（`provider`）、项目/会话总数 |
 
 接口文档：<http://127.0.0.1:9000/docs>
 
@@ -148,6 +164,9 @@ Windows 下也可以直接双击 `start.bat`（会检查前端产物、必要时
 | `CODEBUDDY_WORKSPACE_STORAGE` | `%APPDATA%\Code\User\workspaceStorage` | 工作区映射来源 |
 | `CODEBUDDY_DB` | `./data/codebuddy_cache.db` | 缓存库路径 |
 | `CODEBUDDY_DIST` | `./frontend/dist` | 前端产物路径 |
+| `WORKBUDDY_HOME` | `~/.workbuddy` | WorkBuddy 数据根目录 |
+| `WORKBUDDY_DB` | `./data/workbuddy_cache.db` | WorkBuddy 缓存库路径 |
+| `CODEBUDDY_SETTINGS` | `./data/settings.json` | 数据源开关的持久化位置 |
 
 数据库共 6 张表：`workspace`、`conversation`、`request`、`message_stat`、`scan_file`（增量指纹账本）、`sync_meta`。增量以会话为失效单元：`(mtime_ns, size)` 指纹变化 → 级联删除并重新解析；磁盘上消失 → 一并删除，整个写入在单个事务内完成。
 
@@ -156,6 +175,7 @@ Windows 下也可以直接双击 `start.bat`（会检查前端产物、必要时
 ## 已知限制
 
 - 只解析 `history/` 与最小读取集消息文件，不做 `Logs/` 的单请求 step 级钻取。
+- WorkBuddy 的 jsonl 不记录单次调用耗时，该数据源下的「平均耗时」显示为「未记录」。
 - 新版 CodeBuddy 对部分模型不再上报缓存明细（`cacheTokens = cachedMissTokens = 0`），这类请求会让「缓存命中率」偏低；该字段原样展示，不做推断。
 - 少数以引用或命令开头的会话会显示成路径片段，空会话没有标题（显示会话 ID 前 8 位）。
 - 项目重名时追加父目录名消歧（如 `re-web (D:)`），所有图表仍以哈希为 key。

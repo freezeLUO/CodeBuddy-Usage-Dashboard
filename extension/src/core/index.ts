@@ -4,6 +4,7 @@ import { emptyCache, loadCache, saveCache } from './cache'
 import { Filters } from './filters'
 import { UsageQueries } from './queries'
 import { refreshCache } from './refresh'
+import { refreshWorkbuddyCache } from './workbuddy'
 import type {
   CacheFile,
   ConversationDetail,
@@ -15,6 +16,7 @@ import type {
   OptionsPayload,
   Overview,
   ProjectRow,
+  Provider,
   RefreshResult,
   SidebarPayload,
   TimePoint,
@@ -26,6 +28,8 @@ export interface StoreOptions {
   dataRoot: string
   workspaceStorageRoot: string
   cacheFile: string
+  /** 数据源，默认 CodeBuddy。WorkBuddy 走独立的解析器与独立的缓存文件。 */
+  provider?: Provider
   log?: (message: string, level?: LogLevel) => void
 }
 
@@ -38,6 +42,10 @@ export class UsageStore {
   private loadedOnce = false
 
   constructor(private readonly config: StoreOptions) {}
+
+  get provider(): Provider {
+    return this.config.provider ?? 'codebuddy'
+  }
 
   get dataRoot(): string {
     return this.config.dataRoot
@@ -91,11 +99,14 @@ export class UsageStore {
 
   private async runRefresh(onProgress?: (done: number, total: number) => void): Promise<RefreshResult> {
     try {
-      const outcome = await refreshCache(this.cacheData, {
-        dataRoot: this.config.dataRoot,
-        workspaceStorageRoot: this.config.workspaceStorageRoot,
-        onProgress,
-      })
+      const outcome =
+        this.provider === 'workbuddy'
+          ? await refreshWorkbuddyCache(this.cacheData, { root: this.config.dataRoot, onProgress })
+          : await refreshCache(this.cacheData, {
+              dataRoot: this.config.dataRoot,
+              workspaceStorageRoot: this.config.workspaceStorageRoot,
+              onProgress,
+            })
       this.cacheData = outcome.cache
       this.dataRootExists = await isDirectory(this.config.dataRoot)
       this.rebuild()
@@ -130,6 +141,7 @@ export class UsageStore {
       cache_path: this.config.cacheFile,
       data_root: this.config.dataRoot,
       data_root_exists: this.dataRootExists,
+      provider: this.provider,
       workspace_count: overview.workspace_count,
       conversation_count: Object.keys(this.cacheData.conversations).length,
       request_count: this.cacheData.requests.length,
@@ -198,3 +210,4 @@ export function errorText(error: unknown): string {
 
 export { Filters } from './filters'
 export type { FilterInput } from './filters'
+export type { Provider } from './types'

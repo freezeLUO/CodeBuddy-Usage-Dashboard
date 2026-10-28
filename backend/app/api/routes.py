@@ -3,6 +3,8 @@ from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Query
 
+from .. import provider as provider_settings
+from ..db import init_db
 from ..refresh import refresh
 from . import queries
 from .models import (
@@ -12,6 +14,8 @@ from .models import (
     Models,
     Overview,
     Projects,
+    ProviderSwitch,
+    ProviderSwitchRequest,
     RefreshResult,
     Timeseries,
 )
@@ -108,6 +112,14 @@ def get_conversation(
 @router.post("/refresh", response_model=RefreshResult)
 def post_refresh():
     return refresh()
+
+
+@router.post("/provider", response_model=ProviderSwitch)
+def post_provider(payload: ProviderSwitchRequest):
+    """切换数据源：持久化选择 → 建好目标库 → 立即做一次增量刷新。"""
+    name = provider_settings.set_current(payload.provider)
+    init_db()
+    return {"provider": name, "refresh": refresh()}
 
 
 @router.get("/meta", response_model=Meta)

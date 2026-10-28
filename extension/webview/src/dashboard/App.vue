@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { DashboardPayload, DashboardTab, FiltersState, OptionsPayload } from '../shared/types'
+import type { DashboardPayload, DashboardTab, FiltersState, OptionsPayload, Provider } from '../shared/types'
 import {
   getState,
   notifyReady,
@@ -8,10 +8,13 @@ import {
   openSettings,
   request,
   requestRefresh,
+  setProvider as switchProvider,
   setState,
 } from '../shared/rpc'
+import { PROVIDER_LABELS, PROVIDER_OPTIONS, normalizeProvider } from '../shared/provider'
 import { formatClock, formatDate } from '../shared/format'
 import Icon from '../shared/components/Icon.vue'
+import SegmentedControl from '../shared/components/SegmentedControl.vue'
 import FilterBar from './components/FilterBar.vue'
 import OverviewView from './views/OverviewView.vue'
 import ConversationsView from './views/ConversationsView.vue'
@@ -35,6 +38,8 @@ const filters = ref<FiltersState>({ ...DEFAULT_FILTERS, ...(restored?.filters ??
 const tab = ref<DashboardTab>(restored?.tab === 'conversations' ? 'conversations' : 'overview')
 const data = ref<DashboardPayload | null>(null)
 const options = ref<OptionsPayload | null>(null)
+const provider = ref<Provider>('codebuddy')
+const switching = ref(false)
 const loading = ref(true)
 const refreshing = ref(false)
 const error = ref<string | null>(null)
@@ -58,6 +63,7 @@ const dataRange = computed(() => {
   if (!overview?.date_min || !overview.date_max) return '暂无数据'
   return `${formatDate(overview.date_min)} → ${formatDate(overview.date_max)}`
 })
+const providerLabel = computed(() => PROVIDER_LABELS[provider.value])
 
 async function loadOptions(): Promise<void> {
   try {
@@ -71,14 +77,34 @@ async function loadData(silent = false): Promise<void> {
   if (!silent) loading.value = true
   error.value = null
   try {
-    data.value = await request<DashboardPayload>('dashboard', {
+    const next = await request<DashboardPayload>('dashboard', {
       filters: queryFilters.value,
       granularity: filters.value.granularity,
     })
+    data.value = next
+    provider.value = normalizeProvider(next.meta.provider)
   } catch (failure) {
     error.value = (failure as Error).message
   } finally {
     loading.value = false
+  }
+}
+
+async function changeProvider(next: Provider): Promise<void> {
+  if (next === provider.value || switching.value) return
+  switching.value = true
+  error.value = null
+  provider.value = next
+  // 上一个数据源的项目与模型 key 在新数据源里没有意义，切换时一并清空
+  filters.value = { ...filters.value, workspaces: [], models: [] }
+  try {
+    await switchProvider(next)
+    await Promise.all([loadData(), loadOptions()])
+  } catch (failure) {
+    error.value = (failure as Error).message
+    provider.value = normalizeProvider(meta.value?.provider)
+  } finally {
+    switching.value = false
   }
 }
 
@@ -151,7 +177,7 @@ onBeforeUnmount(() => {
 
     <header class="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
       <div class="min-w-0">
-        <h1 class="text-[15px] font-semibold tracking-tight">CodeBuddy 用量看板</h1>
+        <h1 class="text-[15px] font-semibold tracking-tight">{{ providerLabel }} 用量看板</h1>
         <p class="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]" :style="{ color: 'var(--cb-fg-soft)' }">
           <span>数据区间 {{ dataRange }}</span>
           <span class="flex items-center gap-1">
@@ -166,6 +192,14 @@ onBeforeUnmount(() => {
       </div>
 
       <div class="flex items-center gap-1.5">
+        <div class="w-[176px]">
+          <SegmentedControl
+            :model-value="provider"
+            :options="PROVIDER_OPTIONS"
+            @update:model-value="changeProvider"
+          />
+        </div>
+        <span v-if="switching" class="text-[11px]" :style="{ color: 'var(--cb-fg-soft)' }">切换中…</span>
         <button type="button" class="cb-btn cb-btn--ghost" @click="openSettings()">
           <Icon name="settings" :size="12" />
           数据目录

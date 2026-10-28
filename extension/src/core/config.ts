@@ -2,6 +2,21 @@
 import * as os from 'node:os'
 import * as path from 'node:path'
 import { promises as fs } from 'node:fs'
+import type { Provider } from './types'
+
+/** 支持的数据源。两个产品的本地落盘结构完全不同，由各自的采集器分别解析。 */
+export type { Provider }
+
+export const PROVIDERS: Provider[] = ['codebuddy', 'workbuddy']
+
+export const PROVIDER_LABELS: Record<Provider, string> = {
+  codebuddy: 'CodeBuddy',
+  workbuddy: 'WorkBuddy',
+}
+
+export function normalizeProvider(value: unknown): Provider {
+  return value === 'workbuddy' ? 'workbuddy' : 'codebuddy'
+}
 
 export interface PathEnv {
   [key: string]: string | undefined
@@ -10,6 +25,8 @@ export interface PathEnv {
 export interface PathOverrides {
   dataRoot?: string
   workspaceStorageRoot?: string
+  workbuddyRoot?: string
+  provider?: Provider
 }
 
 export function expandHome(input: string, home = os.homedir()): string {
@@ -38,6 +55,20 @@ export function defaultDataRoot(
   return path.join(base, 'CodeBuddyExtension', 'Data')
 }
 
+/**
+ * WorkBuddy 的数据根目录：默认 `~/.workbuddy`，可用 `WORKBUDDY_HOME` 覆盖。
+ * 目录内包含 `projects/<工作区>/<会话>.jsonl`（逐次模型调用）与 `traces/`（30 天轨迹）。
+ */
+export function defaultWorkbuddyRoot(
+  _platform: string = process.platform,
+  env: PathEnv = process.env,
+  home: string = os.homedir(),
+): string {
+  const override = expandHome(env.WORKBUDDY_HOME || '', home)
+  if (override) return path.normalize(override)
+  return path.join(home, '.workbuddy')
+}
+
 export function defaultWorkspaceStorageRoot(
   platform: string = process.platform,
   env: PathEnv = process.env,
@@ -60,12 +91,16 @@ export function resolvePaths(
   env: PathEnv = process.env,
   home: string = os.homedir(),
 ): { dataRoot: string; workspaceStorageRoot: string } {
-  const dataRoot = expandHome(overrides.dataRoot || '', home) || defaultDataRoot(platform, env, home)
+  const provider = overrides.provider ?? 'codebuddy'
+  const configured =
+    provider === 'workbuddy'
+      ? expandHome(overrides.workbuddyRoot || '', home) || defaultWorkbuddyRoot(platform, env, home)
+      : expandHome(overrides.dataRoot || '', home) || defaultDataRoot(platform, env, home)
   const workspaceStorageRoot =
     expandHome(overrides.workspaceStorageRoot || '', home) ||
     defaultWorkspaceStorageRoot(platform, env, home)
   return {
-    dataRoot: path.normalize(dataRoot),
+    dataRoot: path.normalize(configured),
     workspaceStorageRoot: path.normalize(workspaceStorageRoot),
   }
 }

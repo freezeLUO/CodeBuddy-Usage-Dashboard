@@ -34,6 +34,15 @@ watch(
 
 watch(page, () => conversations.fetch())
 
+// 切换数据源后筛选条件被清空，params 可能没有变化，靠版本号强制重取
+watch(
+  () => dashboard.dataVersion,
+  () => {
+    page.value = 1
+    conversations.fetch()
+  },
+)
+
 watch(keyword, (value) => {
   window.clearTimeout(timer)
   timer = window.setTimeout(() => {

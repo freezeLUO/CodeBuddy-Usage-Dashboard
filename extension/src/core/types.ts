@@ -1,5 +1,8 @@
 /** 与 FastAPI 版响应形状保持一致的数据契约（snake_case 直接给 webview 用）。 */
 
+/** 支持的数据源，可在看板与侧边栏顶部切换。 */
+export type Provider = 'codebuddy' | 'workbuddy'
+
 export interface Overview {
   total_input_tokens: number
   total_output_tokens: number
@@ -109,6 +112,7 @@ export interface Meta {
   cache_path: string
   data_root: string
   data_root_exists: boolean
+  provider: Provider
   workspace_count: number
   conversation_count: number
   request_count: number
@@ -205,7 +209,7 @@ export interface MessageStatRecord {
 }
 
 export interface ScanFileRecord {
-  kind: 'index' | 'message'
+  kind: 'index' | 'message' | 'workbuddy'
   conversation_id: string
   mtime_ns: string
   size: number
